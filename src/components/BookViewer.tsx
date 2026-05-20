@@ -2,7 +2,8 @@
 
 import React, { useRef, useState, useCallback, useEffect, forwardRef } from 'react';
 import HTMLFlipBook from 'react-pageflip';
-import { pages, BookPage } from '@/data/chapters';
+import { BookPage } from '@/data/chapters';
+import { getPages } from '@/lib/contentStore';
 import { FlowerDecoration, SmallFlowerCluster, SingleFlower } from '@/components/decorations/FlowerDecoration';
 import { ClockDecoration } from '@/components/decorations/ClockDecoration';
 import { StarDecoration, DualStarDecoration } from '@/components/decorations/StarDecoration';
@@ -35,11 +36,7 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           );
         case 'clock':
-          return (
-            <>
-              <ClockDecoration position="top-right" color={pageData.accentColor} />
-            </>
-          );
+          return <ClockDecoration position="top-right" color={pageData.accentColor} />;
         case 'stars':
           return <StarDecoration position="top-right" color={pageData.accentColor} />;
         case 'dual-stars':
@@ -76,7 +73,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
         {renderDecoration()}
         
         <div className="page-inner">
-          {/* COVER */}
           {pageData.type === 'cover' && (
             <>
               <h1 className="cover-title">{pageData.title}</h1>
@@ -84,12 +80,10 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           )}
 
-          {/* BLANK LEFT */}
           {pageData.type === 'blank-left' && (
             <div style={{ opacity: 0 }}>&nbsp;</div>
           )}
 
-          {/* CHAPTER TITLE */}
           {pageData.type === 'chapter-title' && (
             <>
               <span className="chapter-number">{pageData.chapterNumber}</span>
@@ -97,7 +91,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           )}
 
-          {/* NARRATIVE */}
           {pageData.type === 'narrative' && (
             <>
               <div className="narrative-text" dangerouslySetInnerHTML={{ __html: pageData.content || '' }} />
@@ -109,7 +102,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           )}
 
-          {/* QUOTE-ONLY */}
           {pageData.type === 'quote' && (
             <>
               {pageData.quoteText && (
@@ -123,7 +115,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           )}
 
-          {/* LYRICS */}
           {pageData.type === 'lyrics' && (
             <>
               {pageData.title && (
@@ -154,7 +145,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
             </>
           )}
 
-          {/* CLOSING */}
           {pageData.type === 'closing' && (
             <>
               <p className="closing-text">
@@ -170,7 +160,6 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
           )}
         </div>
 
-        {/* Page number */}
         {pageData.type !== 'cover' && pageData.type !== 'blank-left' && pageData.type !== 'closing' && (
           <span className={`page-number ${pageNumber % 2 === 0 ? 'left' : 'right'}`}>
             {pageNumber}
@@ -185,11 +174,17 @@ export function BookViewer() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(pages.length);
   const [dimensions, setDimensions] = useState({ width: 450, height: 600 });
   const [isMobile, setIsMobile] = useState(false);
+  const [ready, setReady] = useState(false);
   const { startAudio } = useAudio();
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [bookPages, setBookPages] = useState<BookPage[]>([]);
+
+  useEffect(() => {
+    // Load content from store (localStorage or defaults)
+    setBookPages(getPages());
+  }, []);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -211,8 +206,13 @@ export function BookViewer() {
     };
 
     updateDimensions();
+    // Small delay to ensure layout is stable before showing
+    const timer = setTimeout(() => setReady(true), 200);
     window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => {
+      window.removeEventListener('resize', updateDimensions);
+      clearTimeout(timer);
+    };
   }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -236,26 +236,31 @@ export function BookViewer() {
     }
   }, []);
 
+  const totalPages = bookPages.length;
   const progress = totalPages > 1 ? (currentPage / (totalPages - 1)) * 100 : 0;
-
-  // Display page number (for the user-facing indicator)
   const displayPage = Math.min(currentPage + 1, totalPages);
 
+  if (bookPages.length === 0) {
+    return <div style={{ background: '#FDF8F3', width: '100vw', height: '100vh' }} />;
+  }
+
   return (
-    <div className="book-container" onClick={() => {
-      if (!hasInteracted) {
-        startAudio();
-        setHasInteracted(true);
-      }
-    }}>
+    <div
+      className="book-container"
+      style={{ opacity: ready ? 1 : 0, transition: 'opacity 0.5s ease' }}
+      onClick={() => {
+        if (!hasInteracted) {
+          startAudio();
+          setHasInteracted(true);
+        }
+      }}
+    >
       <FloatingParticles />
 
-      {/* Progress bar */}
       <div className="progress-bar">
         <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Book */}
       <HTMLFlipBook
         ref={bookRef}
         width={dimensions.width}
@@ -268,7 +273,6 @@ export function BookViewer() {
         showCover={true}
         mobileScrollSupport={true}
         onFlip={onFlip}
-        onInit={() => setTotalPages(pages.length)}
         className="stf__wrapper"
         style={{}}
         startPage={0}
@@ -285,12 +289,11 @@ export function BookViewer() {
         clickEventForward={false}
         renderOnlyPageLengthChange={false}
       >
-        {pages.map((page, idx) => (
+        {bookPages.map((page, idx) => (
           <Page key={page.id} pageData={page} pageNumber={idx} />
         ))}
       </HTMLFlipBook>
 
-      {/* Nav buttons - desktop only */}
       <div className="nav-buttons left">
         <button className="nav-btn" onClick={goPrev} disabled={currentPage <= 0} aria-label="Previous page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -306,12 +309,10 @@ export function BookViewer() {
         </button>
       </div>
 
-      {/* Page indicator */}
       <div className="page-indicator">
         {displayPage} / {totalPages}
       </div>
 
-      {/* Music player */}
       <MusicPlayer />
     </div>
   );

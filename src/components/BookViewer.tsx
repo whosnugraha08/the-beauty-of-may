@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect, forwardRef } from 'react';
 import HTMLFlipBook from 'react-pageflip';
-import { BookPage } from '@/data/chapters';
+import { BookPage, pages as defaultPages } from '@/data/chapters';
 import { getPages } from '@/lib/contentStore';
 import { FlowerDecoration, SmallFlowerCluster, SingleFlower } from '@/components/decorations/FlowerDecoration';
 import { ClockDecoration } from '@/components/decorations/ClockDecoration';
@@ -69,9 +69,9 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
     ].filter(Boolean).join(' ');
 
     return (
-      <div className={pageClasses} ref={ref} data-density="soft">
+      <div className={pageClasses} ref={ref} data-density={pageData.type === 'cover' || pageData.type === 'blank-left' ? 'hard' : 'soft'}>
         {renderDecoration()}
-        
+
         <div className="page-inner">
           {pageData.type === 'cover' && (
             <>
@@ -170,7 +170,7 @@ const Page = forwardRef<HTMLDivElement, { pageData: BookPage; pageNumber: number
   }
 );
 
-export function BookViewer() {
+export function BookViewer({ onReachEnd }: { onReachEnd?: () => void }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -179,11 +179,12 @@ export function BookViewer() {
   const [ready, setReady] = useState(false);
   const { startAudio } = useAudio();
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [bookPages, setBookPages] = useState<BookPage[]>([]);
+  const [bookPages, setBookPages] = useState<BookPage[]>(defaultPages);
+  const reachEndCalled = useRef(false);
 
   useEffect(() => {
-    // Load content from store (localStorage or defaults)
-    setBookPages(getPages());
+    // Load content from Supabase (falls back to defaults)
+    getPages().then((p) => setBookPages(p));
   }, []);
 
   useEffect(() => {
@@ -206,7 +207,6 @@ export function BookViewer() {
     };
 
     updateDimensions();
-    // Small delay to ensure layout is stable before showing
     const timer = setTimeout(() => setReady(true), 200);
     window.addEventListener('resize', updateDimensions);
     return () => {
@@ -217,12 +217,18 @@ export function BookViewer() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onFlip = useCallback((e: any) => {
-    setCurrentPage(e.data);
+    const page = e.data;
+    setCurrentPage(page);
     if (!hasInteracted) {
       startAudio();
       setHasInteracted(true);
     }
-  }, [hasInteracted, startAudio]);
+    // Trigger outro when reaching last page
+    if (page >= bookPages.length - 2 && onReachEnd && !reachEndCalled.current) {
+      reachEndCalled.current = true;
+      setTimeout(() => onReachEnd(), 1500);
+    }
+  }, [hasInteracted, startAudio, bookPages.length, onReachEnd]);
 
   const goNext = useCallback(() => {
     if (bookRef.current) {
@@ -240,14 +246,10 @@ export function BookViewer() {
   const progress = totalPages > 1 ? (currentPage / (totalPages - 1)) * 100 : 0;
   const displayPage = Math.min(currentPage + 1, totalPages);
 
-  if (bookPages.length === 0) {
-    return <div style={{ background: '#FDF8F3', width: '100vw', height: '100vh' }} />;
-  }
-
   return (
     <div
       className="book-container"
-      style={{ opacity: ready ? 1 : 0, transition: 'opacity 0.5s ease' }}
+      style={{ opacity: ready ? 1 : 0, transition: 'opacity 0.6s ease' }}
       onClick={() => {
         if (!hasInteracted) {
           startAudio();

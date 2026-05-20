@@ -73,8 +73,10 @@ function PageEditor({
   const [decorationType, setDecorationType] = useState(page.decorationType);
   const [accentColor, setAccentColor] = useState(page.accentColor);
   const [lyricsRaw, setLyricsRaw] = useState((page.lyrics || []).join('\n'));
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
     const updates: Partial<BookPage> = {
       content,
       title,
@@ -89,6 +91,7 @@ function PageEditor({
       updates.lyrics = lyricsRaw.split('\n');
     }
     onSave(updates);
+    setSaving(false);
     onClose();
   };
 
@@ -197,7 +200,7 @@ function PageEditor({
 
           {pageType === 'closing' && (
             <div style={styles.fieldGroup}>
-              <label style={styles.label}>Signature (e.g., — Al)</label>
+              <label style={styles.label}>Signature (e.g., — AL)</label>
               <input
                 type="text"
                 value={quoteAuthor}
@@ -232,7 +235,9 @@ function PageEditor({
 
         <div style={styles.editorFooter}>
           <button onClick={onClose} style={styles.secondaryBtn}>Batal</button>
-          <button onClick={handleSave} style={styles.primaryBtn}>Simpan</button>
+          <button onClick={handleSave} style={styles.primaryBtn} disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Simpan'}
+          </button>
         </div>
       </div>
     </div>
@@ -241,43 +246,55 @@ function PageEditor({
 
 export default function AdminPage() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [pages, setPages] = useState<BookPage[]>([]);
-  const [chapterNames, setChapterNamesState] = useState<Record<number, string>>({});
+  const [pages, setPagesList] = useState<BookPage[]>([]);
+  const [chapterNamesMap, setChapterNamesMap] = useState<Record<number, string>>({});
   const [editingPage, setEditingPage] = useState<BookPage | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [importJson, setImportJson] = useState('');
   const [notification, setNotification] = useState('');
+  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const loadData = useCallback(() => {
-    setPages(getPages());
-    setChapterNamesState(getChapterNames());
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    const [p, c] = await Promise.all([getPages(), getChapterNames()]);
+    setPagesList(p);
+    setChapterNamesMap(c);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (authenticated) loadData();
   }, [authenticated, loadData]);
 
-  const handleSavePage = (pageId: number, updates: Partial<BookPage>) => {
-    updatePage(pageId, updates);
-    loadData();
-    showNotif('Halaman berhasil disimpan');
+  const handleSavePage = async (pageId: number, updates: Partial<BookPage>) => {
+    const ok = await updatePage(pageId, updates);
+    if (ok) {
+      await loadData();
+      showNotif('✅ Halaman berhasil disimpan ke cloud');
+    } else {
+      showNotif('❌ Gagal menyimpan. Cek koneksi Supabase.');
+    }
   };
 
-  const handleResetDefaults = () => {
-    if (confirm('Reset semua konten ke default? Semua perubahan akan hilang.')) {
-      resetToDefaults();
-      loadData();
-      showNotif('Konten direset ke default');
+  const handleResetDefaults = async () => {
+    if (confirm('Reset semua konten ke default? Semua perubahan di cloud akan hilang.')) {
+      const ok = await resetToDefaults();
+      if (ok) {
+        await loadData();
+        showNotif('✅ Konten direset ke default');
+      } else {
+        showNotif('❌ Gagal reset');
+      }
     }
   };
 
   const handleExport = () => {
-    const json = exportContent();
+    const json = exportContent(pages, chapterNamesMap);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -285,18 +302,24 @@ export default function AdminPage() {
     a.download = `tbom-content-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showNotif('Konten berhasil diexport');
+    showNotif('📥 Konten berhasil diexport');
   };
 
-  const handleImport = () => {
-    if (importContent(importJson)) {
-      loadData();
+  const handleImport = async () => {
+    const ok = await importContent(importJson);
+    if (ok) {
+      await loadData();
       setShowImport(false);
       setImportJson('');
-      showNotif('Konten berhasil diimport');
+      showNotif('✅ Konten berhasil diimport ke cloud');
     } else {
-      showNotif('Format JSON tidak valid');
+      showNotif('❌ Format JSON tidak valid');
     }
+  };
+
+  const handleChapterNameChange = async (cId: number, name: string) => {
+    setChapterNamesMap((prev) => ({ ...prev, [cId]: name }));
+    await updateChapterName(cId, name);
   };
 
   const showNotif = (msg: string) => {
@@ -325,23 +348,29 @@ export default function AdminPage() {
       <header style={styles.header}>
         <div>
           <h1 style={styles.headerTitle}>Admin Panel</h1>
-          <p style={styles.headerSubtitle}>The beauty of May — Content Editor</p>
+          <p style={styles.headerSubtitle}>The beauty of May — Cloud Content Editor (Supabase)</p>
         </div>
         <div style={styles.headerActions}>
           <button onClick={handleExport} style={styles.actionBtn}>
-            📥 Export JSON
+            📥 Export
           </button>
           <button onClick={() => setShowImport(true)} style={styles.actionBtn}>
-            📤 Import JSON
+            📤 Import
           </button>
           <button onClick={handleResetDefaults} style={styles.dangerBtn}>
-            🔄 Reset Default
+            🔄 Reset
           </button>
           <a href="/" style={styles.actionBtn}>
             📖 Lihat Buku
           </a>
         </div>
       </header>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#8b8b9e' }}>
+          Loading dari Supabase...
+        </div>
+      )}
 
       <main style={styles.main}>
         {Object.entries(groupedPages).map(([chapterId, chapterPages]) => {
@@ -351,11 +380,8 @@ export default function AdminPage() {
               <div style={styles.chapterHeader}>
                 <input
                   type="text"
-                  value={chapterNames[cId] || ''}
-                  onChange={(e) => {
-                    updateChapterName(cId, e.target.value);
-                    setChapterNamesState((prev) => ({ ...prev, [cId]: e.target.value }));
-                  }}
+                  value={chapterNamesMap[cId] || ''}
+                  onChange={(e) => handleChapterNameChange(cId, e.target.value)}
                   style={styles.chapterNameInput}
                 />
                 <span style={styles.chapterBadge}>{chapterPages.length} halaman</span>
@@ -440,7 +466,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#1a1a2e',
     color: '#e0d6cc',
     fontFamily: "'Nunito', sans-serif",
-    overflow: 'auto',
   },
   notification: {
     position: 'fixed',
@@ -464,6 +489,9 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap' as const,
     gap: '1rem',
     background: '#16162a',
+    position: 'sticky' as const,
+    top: 0,
+    zIndex: 100,
   },
   headerTitle: {
     fontSize: '1.4rem',

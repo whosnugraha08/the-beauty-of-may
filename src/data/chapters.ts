@@ -46,9 +46,11 @@ export const pages: BookPage[] = [
     id: 3,
     chapterId: 1,
     type: 'narrative',
-    content: `<p>Semuanya mulai dari tempat yang paling gak diduga — Roblox. Indo Voice, tepatnya. Tempat yang isinya orang-orang random ngobrol, main, kadang berantem sendiri. Gak ada yang spesial dari awal kita kenal. Cuma kebetulan sering ketemu di server yang sama, terus lama-lama jadi sering main bareng.</p>
+    content: `<p>Semuanya mulai dari tempat yang paling gak diduga — Roblox. Indo Voice, tepatnya. Tempat yang isinya orang-orang random ngobrol dan main bareng.</p>
 
-<p>Kita belum pernah ketemu langsung. Semua lewat layar. Tapi anehnya, dari situ aja udah cukup buat bikin sesuatu mulai tumbuh tanpa aku sadarin.</p>`,
+<p>Awalnya aku notice satu hal kecil: username-nya. <em>whosmeiy</em>. Dan username aku — <em>whosnugraa</em>. Sama-sama awalan "whos." Dari situ kita mulai ngobrol. Gak ada alasan besar, cuma kebetulan kecil yang bikin penasaran.</p>
+
+<p>Kita belum pernah ketemu langsung. Semua lewat layar. Tapi dari situ aja, sesuatu mulai tumbuh tanpa aku sadarin.</p>`,
     decorationType: 'flowers',
     accentColor: '#A8B5A0',
   },
@@ -56,9 +58,9 @@ export const pages: BookPage[] = [
     id: 4,
     chapterId: 1,
     type: 'narrative',
-    content: `<p>Komunikasinya on-off. Ada minggu-minggu di mana kita ngobrol tiap hari, ada juga minggu-minggu di mana gak ada kabar sama sekali. Gak ada yang maksa, gak ada yang nuntut. Jalan aja gitu.</p>
+    content: `<p>Komunikasinya on-off. Ada minggu-minggu di mana kita ngobrol tiap hari, ada juga yang gak ada kabar sama sekali. Gak ada yang maksa, gak ada yang nuntut. Jalan aja gitu.</p>
 
-<p>Tapi momen-momen kecil itu yang ternyata numpuk. Cara dia ngomong, cara dia ketawa di voice chat, hal-hal yang dia ceritain. Aku gak ada rencana buat suka. Tapi perasaan itu datang sendiri, pelan-pelan, tanpa ijin.</p>`,
+<p>Tapi momen-momen kecil itu yang ternyata numpuk. Cara dia ngomong, cara dia ketawa di voice chat, hal-hal yang dia ceritain. Aku gak ada rencana buat suka. Tapi perasaan itu datang sendiri, pelan-pelan.</p>`,
     quoteText: '"dari awal pas kenal dia awal-awal tu aku gak ada ngarah kesana. tapi aku akhirnya jatuh juga karna sering sama dia."',
     decorationType: 'flowers',
     accentColor: '#A8B5A0',
@@ -347,6 +349,7 @@ export const pages: BookPage[] = [
     decorationType: 'music-notes',
     accentColor: '#B8B0CC',
   },
+  // LYRICS PAGE 1 (split to avoid overflow)
   {
     id: 30,
     chapterId: 8,
@@ -365,7 +368,16 @@ export const pages: BookPage[] = [
       'A thousand songs about you.',
       'I don\'t know what to do.',
       'My mind is stuck on you.',
-      '',
+    ],
+    decorationType: 'music-notes',
+    accentColor: '#B8B0CC',
+  },
+  // LYRICS PAGE 2
+  {
+    id: 31,
+    chapterId: 8,
+    type: 'lyrics',
+    lyrics: [
       'If there\'s somebody new, just tell me it\'s true.',
       'I thought these words could make you stay,',
       'but silence took you away.',
@@ -394,7 +406,7 @@ export const pages: BookPage[] = [
 
   // ===== CHAPTER 9: "kalau beneran ditanya" =====
   {
-    id: 31,
+    id: 32,
     chapterId: 9,
     type: 'chapter-title',
     chapterNumber: 'chapter nine',
@@ -403,7 +415,7 @@ export const pages: BookPage[] = [
     accentColor: '#C4A0A0',
   },
   {
-    id: 32,
+    id: 33,
     chapterId: 9,
     type: 'narrative',
     content: `<p>Ini bukan resolusi. Bukan happy ending, bukan juga tragic ending. Cuma kejujuran yang tersisa.</p>
@@ -415,7 +427,7 @@ export const pages: BookPage[] = [
     accentColor: '#C4A0A0',
   },
   {
-    id: 33,
+    id: 34,
     chapterId: 9,
     type: 'narrative',
     content: `<p>Dulu memang ada masalahnya. Ada luka lama yang belum sembuh, ada yang masih dibawa-bawa. Dan itu bikin aku gak bisa kasih yang terbaik.</p>
@@ -428,16 +440,16 @@ export const pages: BookPage[] = [
 
   // ===== PENUTUP =====
   {
-    id: 34,
+    id: 35,
     chapterId: 10,
     type: 'closing',
     content: 'kamu gak harus membalas apapun.\naku cuma mau kamu tahu.',
-    quoteAuthor: '— Al',
+    quoteAuthor: '— AL',
     decorationType: 'none',
     accentColor: '#C4A0A0',
   },
   {
-    id: 35,
+    id: 36,
     chapterId: 10,
     type: 'blank-left',
     decorationType: 'none',

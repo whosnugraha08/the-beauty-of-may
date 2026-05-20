@@ -28,8 +28,7 @@
 
 html, body {
   width: 100%;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
   background: var(--color-bg);
   font-family: var(--font-body);
   color: var(--color-text);
@@ -37,67 +36,273 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ===== LOADING SCREEN ===== */
-.loading-screen {
+/* ===== INTRO OVERLAY ===== */
+.intro-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--color-bg);
-  transition: opacity 1s ease, visibility 1s ease;
+  cursor: pointer;
+  overflow: hidden;
 }
 
-.loading-screen.fade-out {
+.intro-overlay.fade-out {
+  animation: introFadeOut 1.2s ease forwards;
+}
+
+@keyframes introFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; pointer-events: none; }
+}
+
+.intro-bg-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(80px);
   opacity: 0;
-  visibility: hidden;
+  animation: glowIn 2s ease 0.3s forwards;
 }
 
-.loading-title {
+.intro-bg-glow.glow-1 {
+  top: 20%;
+  left: 30%;
+  background: rgba(196, 160, 160, 0.2);
+}
+
+.intro-bg-glow.glow-2 {
+  bottom: 20%;
+  right: 25%;
+  background: rgba(184, 176, 204, 0.15);
+  animation-delay: 0.6s;
+}
+
+@keyframes glowIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.intro-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.intro-flower {
+  opacity: 0;
+  animation: introFlowerIn 1.5s ease 0.2s forwards;
+  margin-bottom: 1.5rem;
+}
+
+@keyframes introFlowerIn {
+  from { opacity: 0; transform: scale(0.3) rotate(-30deg); }
+  to { opacity: 0.4; transform: scale(1) rotate(0deg); }
+}
+
+.intro-title {
   font-family: var(--font-display);
-  font-size: 3rem;
+  font-size: 3.2rem;
   font-weight: 400;
   color: var(--color-text);
-  opacity: 0;
-  animation: fadeInUp 1.5s ease forwards;
   letter-spacing: 0.02em;
+  opacity: 0;
+  animation: introTitleIn 1.2s ease 0.5s forwards;
+  line-height: 1.3;
 }
 
-.loading-subtitle {
+@keyframes introTitleIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.95); letter-spacing: 0.1em; }
+  to { opacity: 1; transform: translateY(0) scale(1); letter-spacing: 0.02em; }
+}
+
+.intro-subtitle {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--color-primary);
   opacity: 0;
-  animation: fadeInUp 1.5s ease 0.8s forwards;
+  animation: introSubIn 1s ease 1.2s forwards;
   margin-top: 0.75rem;
 }
 
-.loading-progress {
-  width: 120px;
-  height: 2px;
-  background: rgba(196, 160, 160, 0.2);
-  border-radius: 4px;
-  margin-top: 2.5rem;
-  overflow: hidden;
+@keyframes introSubIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.intro-line {
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+  margin: 1.5rem auto;
+  animation: introLineGrow 1.2s ease 1.6s forwards;
+}
+
+@keyframes introLineGrow {
+  from { width: 0; opacity: 0; }
+  to { width: 80px; opacity: 0.5; }
+}
+
+.intro-hint {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text-soft);
   opacity: 0;
-  animation: fadeIn 0.5s ease 1.2s forwards;
+  animation: introHintIn 1s ease 2s forwards;
+  letter-spacing: 0.05em;
 }
 
-.loading-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-  border-radius: 4px;
-  animation: loadingBar 2s ease-in-out 1.2s forwards;
-  width: 0%;
+@keyframes introHintIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 0.7; transform: translateY(0); }
 }
 
-@keyframes loadingBar {
-  0% { width: 0%; }
-  50% { width: 60%; }
-  100% { width: 100%; }
+.intro-hint-icon {
+  display: inline-block;
+  animation: twinkle 2s ease-in-out infinite;
+  margin-right: 0.4rem;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Intro floating particles */
+.intro-particle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-particle.active {
+  animation: introParticleFloat linear forwards;
+}
+
+@keyframes introParticleFloat {
+  0% { opacity: 0; transform: translateY(50px) rotate(0deg); }
+  20% { opacity: 0.3; }
+  80% { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-100px) rotate(180deg); }
+}
+
+/* ===== OUTRO OVERLAY ===== */
+.outro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  opacity: 0;
+  animation: outroFadeIn 1.5s ease forwards;
+  overflow: hidden;
+}
+
+@keyframes outroFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.outro-flower-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 2rem;
+}
+
+.outro-petal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  transform-origin: center bottom;
+  opacity: 0;
+}
+
+.outro-petal.bloom {
+  animation: petalBloom 1.5s ease forwards;
+}
+
+@keyframes petalBloom {
+  0% { opacity: 0; transform: translate(-50%, -100%) scale(0) rotate(var(--petal-angle)); }
+  50% { opacity: 0.4; }
+  100% { opacity: 0.3; transform: translate(-50%, -100%) scale(1) rotate(var(--petal-angle)); }
+}
+
+.outro-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.outro-center.bloom {
+  animation: centerBloom 0.8s ease 1s forwards;
+}
+
+@keyframes centerBloom {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  to { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+}
+
+.outro-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--color-text-soft);
+  opacity: 0;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.outro-text.visible {
+  animation: outroTextIn 1s ease forwards;
+}
+
+@keyframes outroTextIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 0.7; transform: translateY(0); }
+}
+
+.outro-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.outro-sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.outro-sparkle.active {
+  animation: sparkleFloat 3s ease-out forwards;
+}
+
+@keyframes sparkleFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0); }
+  20% { opacity: 0.6; transform: translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateY(-150px) scale(0.3); }
 }
 
 /* ===== BOOK CONTAINER ===== */
@@ -142,7 +347,6 @@ html, body {
   z-index: 2;
 }
 
-/* Page shadow & paper texture */
 .page::after {
   content: '';
   position: absolute;
@@ -169,8 +373,6 @@ html, body {
   line-height: 1.3;
   letter-spacing: 0.01em;
   margin-bottom: 1.5rem;
-  opacity: 0;
-  animation: fadeInUp 1.2s ease 0.3s forwards;
 }
 
 .cover-subtitle {
@@ -178,8 +380,6 @@ html, body {
   font-style: italic;
   font-size: 1.15rem;
   color: var(--color-primary);
-  opacity: 0;
-  animation: fadeInUp 1.2s ease 0.8s forwards;
   letter-spacing: 0.05em;
 }
 
@@ -254,20 +454,21 @@ html, body {
 .lyrics-page {
   text-align: center;
   justify-content: center;
+  padding: 1.5rem 1.5rem;
 }
 
 .lyrics-container {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
 }
 
 .lyric-line {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.05rem;
-  line-height: 1.8;
+  font-size: 0.92rem;
+  line-height: 1.65;
   color: var(--color-text);
   opacity: 0;
   transform: translateY(8px);
@@ -280,7 +481,7 @@ html, body {
 }
 
 .lyric-line.empty {
-  height: 1.2rem;
+  height: 0.6rem;
 }
 
 /* ===== JOURNAL STYLE (CH 6) ===== */
@@ -337,6 +538,7 @@ html, body {
   font-size: 0.95rem;
   color: var(--color-text-soft);
   margin-top: 2rem;
+  letter-spacing: 0.1em;
 }
 
 /* ===== MUSIC PLAYER ===== */
@@ -435,13 +637,8 @@ html, body {
   gap: 0.75rem;
 }
 
-.nav-buttons.left {
-  left: 1.5rem;
-}
-
-.nav-buttons.right {
-  right: 5rem;
-}
+.nav-buttons.left { left: 1.5rem; }
+.nav-buttons.right { right: 5rem; }
 
 .nav-btn {
   width: 40px;
@@ -470,10 +667,7 @@ html, body {
   transform: none;
 }
 
-.nav-btn svg {
-  width: 16px;
-  height: 16px;
-}
+.nav-btn svg { width: 16px; height: 16px; }
 
 /* ===== DECORATIONS ===== */
 .decoration {
@@ -482,9 +676,7 @@ html, body {
   z-index: 1;
 }
 
-.decoration svg {
-  opacity: 0.35;
-}
+.decoration svg { opacity: 0.35; }
 
 /* Floating particles */
 .floating-particles {
@@ -502,20 +694,10 @@ html, body {
 }
 
 @keyframes floatParticle {
-  0% {
-    opacity: 0;
-    transform: translateY(100vh) rotate(0deg);
-  }
-  10% {
-    opacity: 0.3;
-  }
-  90% {
-    opacity: 0.3;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-10vh) rotate(360deg);
-  }
+  0% { opacity: 0; transform: translateY(100vh) rotate(0deg); }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { opacity: 0; transform: translateY(-10vh) rotate(360deg); }
 }
 
 /* ===== ANIMATIONS ===== */
@@ -525,30 +707,8 @@ html, body {
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInSlow {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.fade-in-element {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.8s ease, transform 0.8s ease;
-}
-
-.fade-in-element.visible {
-  opacity: 1;
-  transform: translateY(0);
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ===== PAGE NUMBER ===== */
@@ -563,124 +723,37 @@ html, body {
   opacity: 0.5;
 }
 
-.page-number.left {
-  left: 1.5rem;
-}
+.page-number.left { left: 1.5rem; }
+.page-number.right { right: 1.5rem; }
 
-.page-number.right {
-  right: 1.5rem;
+/* ===== BOOK FLIP STYLING ===== */
+.stf__wrapper {
+  box-shadow: 0 8px 40px rgba(61, 53, 53, 0.08), 0 2px 12px rgba(61, 53, 53, 0.04);
+  border-radius: 4px;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .page {
-    padding: 2rem 1.5rem;
-  }
-
-  .cover-title {
-    font-size: 2rem;
-  }
-
-  .chapter-title {
-    font-size: 1.6rem;
-  }
-
-  .narrative-text {
-    font-size: 0.92rem;
-    line-height: 1.85;
-  }
-
-  .quote-block {
-    padding: 1rem 1.25rem;
-    margin: 1rem 0;
-  }
-
-  .quote-text {
-    font-size: 0.95rem;
-  }
-
-  .lyric-line {
-    font-size: 0.95rem;
-  }
-
-  .nav-buttons {
-    display: none;
-  }
-
-  .music-player {
-    bottom: 1rem;
-    right: 1rem;
-  }
-
-  .music-btn {
-    width: 38px;
-    height: 38px;
-  }
-
-  .page-indicator {
-    bottom: 1rem;
-    font-size: 0.7rem;
-  }
+  .page { padding: 2rem 1.5rem; }
+  .cover-title { font-size: 2rem; }
+  .intro-title { font-size: 2.2rem; }
+  .chapter-title { font-size: 1.6rem; }
+  .narrative-text { font-size: 0.92rem; line-height: 1.85; }
+  .quote-block { padding: 1rem 1.25rem; margin: 1rem 0; }
+  .quote-text { font-size: 0.95rem; }
+  .lyric-line { font-size: 0.85rem; }
+  .lyrics-page { padding: 1.25rem 1.25rem; }
+  .nav-buttons { display: none; }
+  .music-player { bottom: 1rem; right: 1rem; }
+  .music-btn { width: 38px; height: 38px; }
+  .page-indicator { bottom: 1rem; font-size: 0.7rem; }
 }
 
 @media (max-width: 480px) {
-  .page {
-    padding: 1.5rem 1.25rem;
-  }
-
-  .cover-title {
-    font-size: 1.7rem;
-  }
-
-  .narrative-text {
-    font-size: 0.88rem;
-    line-height: 1.8;
-  }
-}
-
-/* ===== INTRO OVERLAY ===== */
-.intro-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg);
-  cursor: pointer;
-  transition: opacity 1s ease, visibility 1s ease;
-}
-
-.intro-overlay.fade-out {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.intro-hint {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--color-text-soft);
-  margin-top: 2rem;
-  opacity: 0;
-  animation: fadeInUp 1s ease 1.5s forwards;
-  letter-spacing: 0.05em;
-}
-
-.intro-hint-icon {
-  display: inline-block;
-  animation: pulse 2s ease-in-out infinite;
-  margin-right: 0.3rem;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
-
-/* Storybook flip area hints */
-.stf__wrapper {
-  box-shadow: 0 8px 40px rgba(61, 53, 53, 0.08), 0 2px 12px rgba(61, 53, 53, 0.04);
-  border-radius: 4px;
+  .page { padding: 1.5rem 1.25rem; }
+  .cover-title { font-size: 1.7rem; }
+  .intro-title { font-size: 1.8rem; }
+  .narrative-text { font-size: 0.88rem; line-height: 1.8; }
+  .lyric-line { font-size: 0.8rem; line-height: 1.5; }
+  .lyrics-container { gap: 0.15rem; }
 }

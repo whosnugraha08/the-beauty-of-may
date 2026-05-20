@@ -1,6 +1,6 @@
 import { BookPage, pages as defaultPages, chapterNames as defaultChapterNames } from '@/data/chapters';
+import { supabase } from '@/lib/supabase';
 
-const STORAGE_KEY = 'tbom_content';
 const ADMIN_PASSWORD = 'al2026';
 
 export interface StoredContent {
@@ -13,75 +13,102 @@ export function verifyPassword(password: string): boolean {
   return password === ADMIN_PASSWORD;
 }
 
-export function getStoredContent(): StoredContent | null {
-  if (typeof window === 'undefined') return null;
+// ===== READ =====
+export async function getContentFromDB(): Promise<StoredContent | null> {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as StoredContent;
+    const { data, error } = await supabase
+      .from('book_content')
+      .select('pages, chapter_names, updated_at')
+      .eq('id', 'main')
+      .single();
+
+    if (error || !data) return null;
+
+    return {
+      pages: data.pages as BookPage[],
+      chapterNames: data.chapter_names as Record<number, string>,
+      lastModified: data.updated_at,
+    };
   } catch {
     return null;
   }
 }
 
-export function saveContent(content: StoredContent): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(content));
-}
-
-export function getPages(): BookPage[] {
-  const stored = getStoredContent();
+export async function getPages(): Promise<BookPage[]> {
+  const stored = await getContentFromDB();
   return stored?.pages ?? defaultPages;
 }
 
-export function getChapterNames(): Record<number, string> {
-  const stored = getStoredContent();
+export async function getChapterNames(): Promise<Record<number, string>> {
+  const stored = await getContentFromDB();
   return stored?.chapterNames ?? defaultChapterNames;
 }
 
-export function resetToDefaults(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem(STORAGE_KEY);
-}
-
-export function exportContent(): string {
-  const content: StoredContent = {
-    pages: getPages(),
-    chapterNames: getChapterNames(),
-    lastModified: new Date().toISOString(),
-  };
-  return JSON.stringify(content, null, 2);
-}
-
-export function importContent(json: string): boolean {
+// ===== WRITE =====
+async function saveContent(content: StoredContent): Promise<boolean> {
   try {
-    const content = JSON.parse(json) as StoredContent;
-    if (!content.pages || !Array.isArray(content.pages)) return false;
-    saveContent(content);
-    return true;
+    const { error } = await supabase
+      .from('book_content')
+      .upsert({
+        id: 'main',
+        pages: content.pages,
+        chapter_names: content.chapterNames,
+        updated_at: new Date().toISOString(),
+      });
+
+    return !error;
   } catch {
     return false;
   }
 }
 
-export function updatePage(pageId: number, updates: Partial<BookPage>): void {
-  const pages = [...getPages()];
+export async function updatePage(pageId: number, updates: Partial<BookPage>): Promise<boolean> {
+  const pages = await getPages();
   const idx = pages.findIndex((p) => p.id === pageId);
-  if (idx === -1) return;
+  if (idx === -1) return false;
   pages[idx] = { ...pages[idx], ...updates };
-  saveContent({
+
+  return saveContent({
     pages,
-    chapterNames: getChapterNames(),
+    chapterNames: await getChapterNames(),
     lastModified: new Date().toISOString(),
   });
 }
 
-export function updateChapterName(chapterId: number, name: string): void {
-  const names = { ...getChapterNames() };
+export async function updateChapterName(chapterId: number, name: string): Promise<boolean> {
+  const names = { ...(await getChapterNames()) };
   names[chapterId] = name;
-  saveContent({
-    pages: getPages(),
+
+  return saveContent({
+    pages: await getPages(),
     chapterNames: names,
     lastModified: new Date().toISOString(),
   });
+}
+
+export async function resetToDefaults(): Promise<boolean> {
+  return saveContent({
+    pages: defaultPages,
+    chapterNames: defaultChapterNames,
+    lastModified: new Date().toISOString(),
+  });
+}
+
+export function exportContent(pages: BookPage[], chapterNames: Record<number, string>): string {
+  const content: StoredContent = {
+    pages,
+    chapterNames,
+    lastModified: new Date().toISOString(),
+  };
+  return JSON.stringify(content, null, 2);
+}
+
+export async function importContent(json: string): Promise<boolean> {
+  try {
+    const content = JSON.parse(json) as StoredContent;
+    if (!content.pages || !Array.isArray(content.pages)) return false;
+    return saveContent(content);
+  } catch {
+    return false;
+  }
 }
